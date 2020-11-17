@@ -53,7 +53,7 @@ def exif_size(img):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
-                      rank=-1, world_size=1, workers=8):
+                      rank=-1, world_size=1, workers=8, filter_cls=0):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -64,7 +64,8 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       single_cls=opt.single_cls,
                                       stride=int(stride),
                                       pad=pad,
-                                      rank=rank)
+                                      rank=rank,
+                                      filter_cls=filter_cls)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -324,7 +325,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1, filter_cls=0):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -360,12 +361,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = str(Path(self.label_files[0]).parent) + '.cache'  # cached labels
-        if os.path.isfile(cache_path):
+        if False: #os.path.isfile(cache_path):
             cache = torch.load(cache_path)  # load
             if cache['hash'] != get_hash(self.label_files + self.img_files):  # dataset changed
                 cache = self.cache_labels(cache_path)  # re-cache
         else:
-            cache = self.cache_labels(cache_path)  # cache
+            cache = self.cache_labels(cache_path, filter_cls)  # cache
 
         # Read cache
         cache.pop('hash')  # remove hash
@@ -478,7 +479,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 gb += self.imgs[i].nbytes
                 pbar.desc = 'Caching images (%.1fGB)' % (gb / 1E9)
 
-    def cache_labels(self, path='labels.cache'):
+    def cache_labels(self, path='labels.cache', filter_cls=0):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         pbar = tqdm(zip(self.img_files, self.label_files), desc='Scanning images', total=len(self.img_files))
@@ -494,6 +495,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
                 if len(l) == 0:
                     l = np.zeros((0, 5), dtype=np.float32)
+
+                l = l[l[:, 0] == filter_cls]
+                assert len(l)
+
                 x[img] = [l, shape]
             except Exception as e:
                 print('WARNING: Ignoring corrupted image and/or label %s: %s' % (img, e))
