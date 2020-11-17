@@ -496,7 +496,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if len(l) == 0:
                     l = np.zeros((0, 5), dtype=np.float32)
 
+                print(l)
                 l = l[l[:, 0] == filter_cls]
+                print(l)
                 assert len(l)
 
                 x[img] = [l, shape]
