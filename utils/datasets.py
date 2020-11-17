@@ -501,7 +501,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
                 x[img] = [l, shape]
             except Exception as e:
-                print('WARNING: Ignoring corrupted image and/or label %s: %s' % (img, e))
+                pass
+                #print('WARNING: Ignoring corrupted image and/or label %s: %s' % (img, e))
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         torch.save(x, path)  # save for next time
