@@ -370,6 +370,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Read cache
         cache.pop('hash')  # remove hash
+        print(cache)
+        zip(*cache.values())
+
         labels, shapes = zip(*cache.values())
         self.labels = list(labels)
         self.shapes = np.array(shapes, dtype=np.float64)
@@ -506,7 +509,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         torch.save(x, path)  # save for next time
-        print(x)
         return x
 
     def __len__(self):
