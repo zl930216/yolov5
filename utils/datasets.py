@@ -496,9 +496,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if len(l) == 0:
                     l = np.zeros((0, 5), dtype=np.float32)
 
-                print(l)
                 l = l[l[:, 0] == filter_cls]
-                print(l)
                 assert len(l)
 
                 x[img] = [l, shape]
@@ -508,6 +506,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         torch.save(x, path)  # save for next time
+        print(x)
         return x
 
     def __len__(self):
