@@ -370,8 +370,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Read cache
         cache.pop('hash')  # remove hash
-        print(cache)
-        zip(*cache.values())
 
         labels, shapes = zip(*cache.values())
         self.labels = list(labels)
