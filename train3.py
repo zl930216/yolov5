@@ -308,13 +308,13 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 pbar.set_description(s)
 
                 # Plot
-                if plots and ni < 3:
+                if plots and ni < 30:
                     f = save_dir / f'train_batch{ni}.jpg'  # filename
                     plot_images(images=imgs, targets=targets, paths=paths, fname=f)
                     # if tb_writer:
                     #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
-                elif plots and ni == 3 and wandb:
+                elif plots and ni == 30 and wandb:
                     wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')]})
 
             # end batch ------------------------------------------------------------------------------------------------
